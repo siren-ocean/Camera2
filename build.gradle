@@ -86,14 +86,11 @@ repositories {
 }
 
 dependencies {
-    compileOnly files('libs/framework.jar')
     implementation files('libs/guava.jar') // (include jsr305.jar)
     implementation files('libs/android-ex-camera2-portability.jar')
     implementation files('libs/xmp_toolkit.jar')
-    implementation files('libs/glide.jar')
-
-    implementation(name: 'legacy-support-v13-1.1.0-alpha01', ext: 'aar')
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation 'com.github.bumptech.glide:glide:3.6.1'
 }
 
 allprojects {

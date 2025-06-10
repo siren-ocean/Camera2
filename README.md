@@ -30,12 +30,6 @@ adb reboot
 ## 构建步骤
 
 ### Step1：引入静态依赖
-##### @framework.jar:
-```
-// AOSP/android-11/out/target/common/obj/JAVA_LIBRARIES/framework_intermediates/classes-header.jar
-compileOnly files('libs/framework.jar')
-```
-![avatar](images/framework.png)
 
 ##### @guava.jar:
 ```
@@ -53,35 +47,12 @@ implementation files('libs/android-ex-camera2-portability.jar')
 ![avatar](images/android-ex-camera2-portability.png)
 
 
-##### @glide.jar:
-```
-// AOSP/android-11/out/soong/.intermediates/external/glide/glide/android_common/javac/glide.jar
-implementation files('libs/glide.jar')
-```
-![avatar](images/glide.png)
-
-
 ##### @xmp_toolkit.jar:
 ```
 // AOSP/android-11/out/soong/.intermediates/external/xmp_toolkit/XMPCore/xmp_toolkit/android_common/javac/xmp_toolkit.jar
 implementation files('libs/xmp_toolkit.jar')
 ```
 ![avatar](images/xmp_toolkit.png)
-
-
-##### @legacy-support-v13-1.1.0-alpha01.aar:
-```
-// AOSP/android-11/prebuilts/sdk/current/androidx-legacy/m2repository/androidx/legacy/legacy-support-v13/1.1.0-alpha01/legacy-support-v13-1.1.0-alpha01.aar
-implementation(name: 'legacy-support-v13-1.1.0-alpha01', ext: 'aar')
-```
-
-
-![avatar](images/legacy-support-v13-1.1.0-alpha01.png)
-###### ps: legacy-support-v13-1.1.0 在当前版本无法通过线上引用，故换成静态
-```
-## implementation 'androidx.legacy:legacy-support-v13-1.1.0-alpha01'
-```
-
 
 
 
