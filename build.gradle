@@ -1,0 +1,150 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+buildscript {
+    ext {
+        libs = [
+                legacy_support_v4: 'androidx.legacy:legacy-support-v4:1.0.0',
+                guava            : 'com.google.guava:guava:31.1-android',
+                glide            : 'com.github.bumptech.glide:glide:3.6.1',
+        ]
+    }
+
+    repositories {
+        maven {
+            url 'https://maven.aliyun.com/repository/jcenter'
+        }
+        maven {
+            url 'https://maven.aliyun.com/repository/central'
+        }
+        maven {
+            url 'https://maven.aliyun.com/repository/google'
+        }
+    }
+
+    dependencies {
+        classpath "com.android.tools.build:gradle:7.2.2"
+    }
+}
+
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion COMPILE_SDK
+
+    defaultConfig {
+        applicationId "com.android.camera2"
+        minSdkVersion MIN_SDK_VERSION
+        targetSdkVersion TARGET_SDK_VERSION
+        versionCode 32
+        versionName "12"
+    }
+
+    signingConfigs {
+        platform {
+            storeFile file("platform.keystore")
+            storePassword '123456'
+            keyAlias 'platform'
+            keyPassword '123456'
+        }
+    }
+
+    buildTypes {
+        release {
+            debuggable false
+            minifyEnabled false
+            signingConfig signingConfigs.platform
+        }
+
+        debug {
+            debuggable true
+            minifyEnabled false
+            signingConfig signingConfigs.platform
+        }
+
+        applicationVariants.all { variant ->
+            variant.outputs.all {
+                outputFileName = "Camera2.apk"
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs = ['src', 'src_pd', 'src_pd_gcam']
+            res.srcDirs = ['res', 'res_p']
+            manifest.srcFile 'AndroidManifest.xml'
+        }
+    }
+
+    // 脚本移除重复定义的图片
+    android.applicationVariants.all { variant ->
+        variant.preBuild.doFirst {
+            def filesToRemove = [
+                    "res/drawable-xxhdpi/ic_refocus_normal.png",
+                    "res/drawable-xxhdpi/ic_refocus_disabled.png"
+            ]
+
+            filesToRemove.each { relativePath ->
+                def file = file(relativePath)
+                if (file.exists()) {
+                    file.delete()
+                    println "Deleted: ${file.absolutePath}"
+                    exec {
+                        commandLine 'git', 'update-index', '--assume-unchanged', file.absolutePath
+                    }
+                }
+            }
+        }
+    }
+
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}
+
+repositories {
+    flatDir {
+        dirs 'libs'
+    }
+}
+
+dependencies {
+    implementation files('libs/android-ex-camera2-portability.jar')
+    implementation files('libs/xmp_toolkit.jar')
+    implementation libs.legacy_support_v4
+    implementation libs.guava
+    implementation libs.glide
+}
+
+allprojects {
+    repositories {
+        maven {
+            url 'https://maven.aliyun.com/repository/jcenter'
+        }
+        maven {
+            url 'https://maven.aliyun.com/repository/central'
+        }
+        maven {
+            url 'https://maven.aliyun.com/repository/google'
+        }
+    }
+
+    gradle.projectsEvaluated {
+        tasks.withType(JavaCompile) {
+            if (options.bootstrapClasspath != null) {
+                Set<File> fileSet = options.bootstrapClasspath.getFiles()
+                List<File> newFileList = new ArrayList<>();
+                newFileList.add(new File("./libs/framework.jar"))
+                newFileList.addAll(fileSet)
+                options.bootstrapClasspath = files(
+                        newFileList.toArray()
+                )
+            }
+        }
+    }
+}
