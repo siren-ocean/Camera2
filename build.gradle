@@ -73,6 +73,27 @@ android {
         }
     }
 
+    // 脚本移除重复定义的图片
+    android.applicationVariants.all { variant ->
+        variant.preBuild.doFirst {
+            def filesToRemove = [
+                    "res/drawable-xxhdpi/ic_refocus_normal.png",
+                    "res/drawable-xxhdpi/ic_refocus_disabled.png"
+            ]
+
+            filesToRemove.each { relativePath ->
+                def file = file(relativePath)
+                if (file.exists()) {
+                    file.delete()
+                    println "Deleted: ${file.absolutePath}"
+                    exec {
+                        commandLine 'git', 'update-index', '--assume-unchanged', file.absolutePath
+                    }
+                }
+            }
+        }
+    }
+
     lintOptions {
         checkReleaseBuilds false
         abortOnError false

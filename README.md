@@ -1,20 +1,55 @@
 ## Camera2 from android-11.0.0_r10
-### Camera2脱离源码在Android Studiod的编译
+### Camera2脱离源码在Android Studio的编译
 
 ### 惯例说明
 * 不试图改变项目本身的目录结构
 * 通过添加额外的配置和依赖构建Gradle环境支持
-* 会使用脚本移除一些AS不支持的属性和字段，然后利用git本地忽略
-* 由于出现两张图片冲突，并且gradle暂不支持sourceSets.res移除操作，所以仍然使用脚本做忽略移除（ic_refocus_normal.png 和 ic_refocus_disabled.png）
+* 由于出现两张图片冲突 (res和res_p重复定义了两张同名图片)，所以Gradle在编译时会进行移除并做本地忽略
+
+	```
+	// 脚本移除重复定义的图片
+	android.applicationVariants.all { variant ->
+	    variant.preBuild.doFirst {
+	        def filesToRemove = [
+	                "res/drawable-xxhdpi/ic_refocus_normal.png",
+	                "res/drawable-xxhdpi/ic_refocus_disabled.png"
+	        ]
+		
+	        filesToRemove.each { relativePath ->
+	            def file = file(relativePath)
+	            if (file.exists()) {
+	                file.delete()
+	                println "Deleted: ${file.absolutePath}"
+	                exec {
+	                    commandLine 'git', 'update-index', '--assume-unchanged', file.absolutePath
+	                }
+	            }
+	        }
+	    }
+	}
+	```
+
 * 因为使用push的方式进行安装和覆盖，libjni_tinyplanet和libjni_jpegutil两块暂不参与编译  
 	PS:如果希望参与编译，可以引入对应的so文件，或者gradle配置ndkBuild的Android.mk路径,并确保安装了ninja
 
+## 使用命令编译
+### 环境依赖
+*  Gradle 6.5
+*  JDK version >= 8
 
-## 执行步骤
-#### 第一步：运行在Filter上的主函数，执行过滤任务
-<img src="images/filter_main.png" width = "698" height = "702"/>
+```
+# 构建环境
+gradle wrapper
 
-### 第二步：执行Android Studio上Build APK的操作, 然后将apk推送到设备上Camera2所在的目录
+# 打包编译
+./gradlew assemble
+```
+
+## 在Android Studio上编译
+### 推荐使用
+*  Android Studio >= 4.2.2 & JDK version >= 8
+
+### 执行Android Studio上Build APK的操作, 然后将apk推送到设备上Camera2所在的目录
 
 ```
 adb push Camera2.apk /system/priv-app/Camera2/
