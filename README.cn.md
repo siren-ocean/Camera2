@@ -1,13 +1,14 @@
-# English | [中文文档](README.cn.md)
+# [English](README.md) | 中文文档
 ## Camera2 from android-11.0.0_r10
-### Building Camera2 outside AOSP source in Android Studio
+### Camera2脱离源码在Android Studio的编译
 
-### Support Notes
-* Instead of changing the project's directory structure, we add additional configurations and dependencies to build Gradle environment support
-* Due to image conflicts (res and res_p define two images with the same name), Gradle will remove and locally ignore them during compilation
+### 惯例说明
+* 不试图改变项目本身的目录结构
+* 通过添加额外的配置和依赖构建Gradle环境支持
+* 由于出现两张图片冲突 (res和res_p重复定义了两张同名图片)，所以Gradle在编译时会进行移除并做本地忽略
 
 	```
-	// Script to remove duplicate image definitions
+	// 脚本移除重复定义的图片
 	android.applicationVariants.all { variant ->
 	    variant.preBuild.doFirst {
 	        def filesToRemove = [
@@ -29,43 +30,42 @@
 	}
 	```
 
-* Since we use push method for installation and overwriting, libjni_tinyplanet and libjni_jpegutil are not included in the build for now  
-### PS: If you want to include them in the build, you can introduce the corresponding so files, or configure the Android.mk path for ndkBuild in gradle, and ensure ninja is installed.
+* 因为使用push的方式进行安装和覆盖，libjni_tinyplanet和libjni_jpegutil两块暂不参与编译  
+	PS:如果希望参与编译，可以引入对应的so文件，或者gradle配置ndkBuild的Android.mk路径,并确保安装了ninja
 
-## Building with Command Line
-### Environment Requirements
+## 使用命令编译
+### 环境依赖
 *  Gradle 6.5
 *  JDK version >= 8
 
 ```
-# Setup build environment
+# 构建环境
 gradle wrapper
 
-# Build and package
+# 打包编译
 ./gradlew assemble
 ```
 
-
-## Building in Android Studio
-### Recommended
+## 在Android Studio上编译
+### 推荐使用
 *  Android Studio >= 4.2.2 & JDK version >= 8
 
-#### Execute Build APK in Android Studio, then push the apk to the Camera2 directory on the device
+### 执行Android Studio上Build APK的操作, 然后将apk推送到设备上Camera2所在的目录
 
 ```
 adb push Camera2.apk /system/priv-app/Camera2/
 
 adb shell killall com.android.camera2
 ```
-### PS: If Camera2 cannot start normally, you need to reboot the device.
+######  如果Camera2不能正常起来，则需要重启一下设备
 ```
 adb reboot
 ```
 
 
-## Build Steps
+## 构建步骤
 
-### Step 1: Add Static Dependencies
+### Step1：引入静态依赖
 
 ##### @guava.jar:
 ```
@@ -92,16 +92,16 @@ implementation files('libs/xmp_toolkit.jar')
 
 
 
-## Generate platform.keystore Default Signature
+## 生成platform.keystore默认签名
 
-Find the signing certificates in the AOSP/android-11/build/target/product/security path and use [keytool-importkeypair](https://github.com/getfatday/keytool-importkeypair) to generate the keystore.
-Execute the following command:  
+在AOSP/android-11/build/target/product/security路径下找到签名证书，并使用 [keytool-importkeypair](https://github.com/getfatday/keytool-importkeypair) 生成keystore,
+执行如下命令：  
 
 ```
 ./keytool-importkeypair -k platform.keystore -p 123456 -pk8 platform.pk8 -cert platform.x509.pem -alias platform
 ```
 
-And add the following code to the gradle configuration:
+并将以下代码添加到gradle配置中：
 
 ```
     signingConfigs {
@@ -129,25 +129,25 @@ And add the following code to the gradle configuration:
 ```
 
 ### PS:
-##### View ignored file list
+##### 查看被忽略的文件列表
 ```
 git ls-files -v | grep '^h\ '
-```
+```  
 
-##### Ignore and restore a single file
+##### 忽略和还原单个文件
 ``` 
 git update-index --assume-unchanged $path
 git update-index --no-assume-unchanged $path
-```
+``` 
 
-##### Restore all ignored files
+##### 还原全部被忽略的文件
 ```
 git ls-files -v | grep '^h' | awk '{print $2}' |xargs git update-index --no-assume-unchanged 
 ```
 
 ---
 
-### Related Projects
+### 关联项目
 * [Settings](https://github.com/siren-ocean/Settings)
 * [SystemUI](https://github.com/siren-ocean/SystemUI)
 * [Launcher3](https://github.com/siren-ocean/Launcher3)
