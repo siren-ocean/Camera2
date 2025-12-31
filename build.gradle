@@ -1,0 +1,123 @@
+plugins {
+    alias(libs.plugins.android.application)
+}
+
+android {
+    namespace "com.android.camera2"
+    compileSdk COMPILE_SDK.toInteger()
+
+    defaultConfig {
+        applicationId "com.android.camera2"
+        minSdk MIN_SDK_VERSION.toInteger()
+        targetSdk TARGET_SDK_VERSION.toInteger()
+        versionCode 34
+        versionName "14"
+    }
+
+    signingConfigs {
+        platform {
+            storeFile file("platform.keystore")
+            storePassword '123456'
+            keyAlias 'platform'
+            keyPassword '123456'
+        }
+    }
+
+    buildTypes {
+        release {
+            debuggable false
+            minifyEnabled false
+            signingConfig signingConfigs.platform
+        }
+
+        debug {
+            debuggable true
+            minifyEnabled false
+            signingConfig signingConfigs.platform
+        }
+
+        applicationVariants.all { variant ->
+            variant.outputs.all {
+                outputFileName = "Camera2.apk"
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs = ['src', 'src_pd', 'src_pd_gcam']
+            res.srcDirs = ['res', 'res_p']
+            manifest.srcFile 'AndroidManifest.xml'
+        }
+    }
+
+    // 脚本移除重复定义的图片
+    android.applicationVariants.all { variant ->
+        variant.preBuild.doFirst {
+            def filesToRemove = [
+                    "res/drawable-xxhdpi/ic_refocus_normal.png",
+                    "res/drawable-xxhdpi/ic_refocus_disabled.png"
+            ]
+
+            filesToRemove.each { relativePath ->
+                def file = file(relativePath)
+                if (file.exists()) {
+                    file.delete()
+                    println "Deleted: ${file.absolutePath}"
+                    exec {
+                        commandLine 'git', 'update-index', '--assume-unchanged', file.absolutePath
+                    }
+                }
+            }
+        }
+    }
+
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}
+
+dependencies {
+    compileOnly files('libs/framework.jar')
+    implementation files('libs/android-ex-camera2-portability.jar')
+    implementation files('libs/xmp_toolkit.jar')
+    implementation libs.legacy.support.v4
+    implementation libs.guava
+    implementation libs.glide
+
+    // Add old support-v4 as compileOnly for Glide 3.7.0 compatibility
+    compileOnly libs.support.v4
+}
+
+allprojects { project ->
+    project.plugins.withId("com.android.application") {
+        applyReorderRule(project)
+    }
+}
+
+def applyReorderRule(Project project) {
+    project.gradle.projectsEvaluated {
+        project.tasks.matching { it.name == "compileDebugJavaWithJavac" }.configureEach { task ->
+            task.doFirst {
+                task.classpath = reorderClasspath(task.classpath.files)
+            }
+        }
+        project.tasks.matching { it.name == "compileReleaseJavaWithJavac" }.configureEach { task ->
+            task.doFirst {
+                task.classpath = reorderClasspath(task.classpath.files)
+            }
+        }
+    }
+}
+
+def reorderClasspath(Set<File> classpathSet) {
+    def androidJar = classpathSet.find { it.name == "android.jar" }
+    def others = classpathSet - (androidJar ? [androidJar] : [])
+    return files((others + (androidJar ?: [])).toArray())
+}
